@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reading Post...</title>
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"> 
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">< cd ../</a>
+    
+    <main id="content" class="post-content">
+      <p>Loading payload...</p>
+	
+    <noscript>
+      <div style="border: 1px solid #ff3333; padding: 15px; color: #ff3333;">
+      [!] WARNING: Script execution blocked. 
+      <br>
+      You can access the raw text payload directly here:
+      <a href="posts/actioncam.md" style="color: #fff; text-decoration: underline;">/posts/actioncam.md</a>
+      </div>
+    </noscript>
+
+    </main>
+
+    <section class="comments-section">
+      <div id="giscus-container"></div>
+    </section>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const contentDiv = document.getElementById('content');
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const postPath = urlParams.get('post');
+
+      if (!postPath) {
+        contentDiv.innerHTML = '<h1>Error 400</h1><p>No post specified in URL.</p>';
+        return;
+      }
+
+      try {
+        const response = await fetch(postPath);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const markdown = await response.text();
+        
+        const titleMatch = markdown.match(/^#\s+(.*)/m);
+        if (titleMatch) {
+          document.title = `${titleMatch[1]} - Terminal_Log`;
+        }
+
+        contentDiv.innerHTML = marked.parse(markdown);
+
+        // Process Code Blocks
+        contentDiv.querySelectorAll('pre').forEach((pre) => {
+          const codeElement = pre.querySelector('code');
+          if (!codeElement) return;
+
+          hljs.highlightElement(codeElement);
+
+          let lang = 'text';
+          codeElement.className.split(' ').forEach(cls => {
+            if (cls.startsWith('language-')) {
+              lang = cls.replace('language-', '');
+            }
+          });
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'code-block-wrapper';
+          
+          const header = document.createElement('div');
+          header.className = 'code-header';
+          header.innerHTML = `
+            <span class="code-lang">${lang}</span>
+            <button class="copy-btn">Copy</button>
+          `;
+
+          const copyBtn = header.querySelector('.copy-btn');
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(codeElement.innerText).then(() => {
+              copyBtn.innerText = 'Copied!';
+              setTimeout(() => copyBtn.innerText = 'Copy', 1500);
+            });
+          });
+
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(header);
+          wrapper.appendChild(pre);
+        });
+
+       	// Process Images
+	contentDiv.querySelectorAll('img').forEach((img) => {
+	img.setAttribute('loading', 'lazy'); 
+  	const src = img.getAttribute('src');
+  	const link = document.createElement('a');
+  	link.href = src;
+  	link.target = '_blank';
+  	img.parentNode.insertBefore(link, img);
+  	link.appendChild(img);
+
+	});
+
+        // Giscus Comments
+  
+        const giscusScript = document.createElement('script');
+        giscusScript.src = 'https://giscus.app/client.js';
+        giscusScript.async = true;
+        giscusScript.crossOrigin = 'anonymous';
+
+        giscusScript.setAttribute('data-repo', 'alfredH0/alfredH0.github.io');
+        giscusScript.setAttribute('data-repo-id', 'R_kgDOSxh4kw');
+        giscusScript.setAttribute('data-category', 'Announcements'); 
+        giscusScript.setAttribute('data-category-id', 'DIC_kwDOSxh4k84C-iMY');
+
+        giscusScript.setAttribute('data-mapping', 'specific');
+        giscusScript.setAttribute('data-term', postPath); 
+
+        giscusScript.setAttribute('data-strict', '0');
+        giscusScript.setAttribute('data-reactions-enabled', '1');
+        giscusScript.setAttribute('data-emit-metadata', '0');
+        giscusScript.setAttribute('data-input-position', 'bottom');
+        giscusScript.setAttribute('data-theme', 'transparent_dark'); 
+        giscusScript.setAttribute('data-lang', 'en');
+
+        document.getElementById('giscus-container').appendChild(giscusScript);
+
+      } catch (error) {
+        contentDiv.innerHTML = `<h1>Error 404</h1><p>Failed to load post: ${postPath}</p><p><code>${error.message}</code></p>`;
+      }
+    });
+  </script>
+</body>
+</html>
